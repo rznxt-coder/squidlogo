@@ -3,137 +3,466 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Squid Game Symbols — Animated</title>
+<title>3D Butterfly Meadow — Flowers Added</title>
 <style>
-  :root{
-    --bg:#000; --stroke:#ffffff; --dot:#ff2d78;   /* pink dot */
-    --w: clamp(92px, 22vw, 180px);                /* symbol size */
-    --thick: 14;                                  /* line thickness */
-    --gap: 45;                                    /* stroke gap length */
-    --drawTime: 1.1s;                             /* time to “draw” a line */
-    --rideTime: 1.2s;                             /* time for dot to travel */
-    --stagger: .65s;                              /* delay between symbols */
-  }
-
   html,body{height:100%}
   body{
-    margin:0; background:var(--bg); color:#ddd;
-    display:flex; align-items:center; justify-content:center;
-    font:14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    overflow:hidden;
+    margin:0; overflow:hidden; background:linear-gradient(#8ec5ff,#cfeeff 65%, #9fe0a3 90%);
+    font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;
   }
-
-  .row{display:flex; gap:clamp(20px,7vw,60px); align-items:center; padding:6vh 6vw;}
-
-  .symbol{width:var(--w); height:var(--w);}
-  svg{width:100%; height:100%; overflow:visible}
-
-  /* white neon stroke */
-  .shape{
-    fill:none;
-    stroke:var(--stroke);
-    stroke-width:var(--thick);
-    stroke-linecap:round; stroke-linejoin:round;
-    filter: drop-shadow(0 0 6px rgba(255,255,255,.6))
-            drop-shadow(0 0 18px rgba(255,255,255,.35));
-    /* draw-on effect with a “gap” so ends look open */
-    stroke-dasharray: calc(1000 - var(--gap)) var(--gap);
-    stroke-dashoffset: 1000;
-    animation: draw var(--drawTime) ease forwards var(--delay);
-  }
-
-  /* glowing pink dot */
-  .dot{ fill: var(--dot); filter: drop-shadow(0 0 6px var(--dot)) drop-shadow(0 0 16px var(--dot)); }
-
-  /* looped gentle glow breathing */
-  .glow { animation: breath 3s ease-in-out infinite 1.8s; }
-
-  /* sequence timing */
-  .symbol:nth-child(1){ --delay: 0s; }
-  .symbol:nth-child(2){ --delay: var(--stagger); }
-  .symbol:nth-child(3){ --delay: calc(var(--stagger) * 2); }
-
-  @keyframes draw { to { stroke-dashoffset: 0; } }
-  @keyframes breath {
-    0%,100% { filter: drop-shadow(0 0 6px rgba(255,255,255,.6)) drop-shadow(0 0 18px rgba(255,255,255,.35)); }
-    50%     { filter: drop-shadow(0 0 12px rgba(255,255,255,.9)) drop-shadow(0 0 30px rgba(255,255,255,.6)); }
-  }
-
-  /* Reduce motion accessibility */
-  @media (prefers-reduced-motion: reduce){
-    .shape{ animation: none; stroke-dashoffset: 0; }
-    .glow { animation: none; }
-    animateMotion{ display:none; }
+  .hud{
+    position:fixed; left:12px; bottom:12px; padding:8px 10px; border-radius:10px;
+    background:rgba(255,255,255,.7); color:#134; user-select:none; backdrop-filter: blur(6px);
+    font-size:12px; line-height:1.35;
   }
 </style>
 </head>
 <body>
-  <div class="row" aria-label="Animated Squid Game symbols">
-    <!-- CIRCLE with a small gap -->
-    <div class="symbol" aria-hidden="true">
-      <svg viewBox="0 0 200 200" role="img">
-        <!-- circular path (hidden) -->
-        <path id="pCircle" d="
-          M 100,35
-          A 65 65 0 1 1 99.99,35
-        " fill="none" />
-        <!-- visible stroke (uses dash to create opening) -->
-        <circle class="shape glow" cx="100" cy="100" r="65" />
-        <!-- pink dot riding the path -->
-        <circle class="dot" r="7">
-          <animateMotion dur="var(--rideTime)" begin="var(--delay)" repeatCount="1" fill="freeze" keySplines=".3 0 .2 1" keyTimes="0;1" calcMode="spline">
-            <mpath xlink:href="#pCircle"/>
-          </animateMotion>
-          <!-- loop: wait until all three finished, then restart sequence -->
-          <animateMotion dur="var(--rideTime)" begin="cLoop.begin" repeatCount="1" fill="freeze">
-            <mpath xlink:href="#pCircle"/>
-          </animateMotion>
-        </circle>
-      </svg>
-    </div>
+<div class="hud">🦋 Move mouse / touch: butterflies turn toward it<br/>Drag to orbit • Scroll to zoom</div>
 
-    <!-- TRIANGLE caret (open at top) -->
-    <div class="symbol" aria-hidden="true">
-      <svg viewBox="0 0 200 200" role="img">
-        <path id="pTri" d="M 45,155 L 100,50 L 155,155" fill="none"/>
-        <path class="shape glow" d="M 45,155 L 100,50 L 155,155" />
-        <circle class="dot" r="7">
-          <animateMotion dur="var(--rideTime)" begin="calc(var(--delay) + .05s)" repeatCount="1" fill="freeze" keySplines=".3 0 .2 1" keyTimes="0;1" calcMode="spline">
-            <mpath xlink:href="#pTri"/>
-          </animateMotion>
-          <animateMotion dur="var(--rideTime)" begin="cLoop.begin+.05s" repeatCount="1" fill="freeze">
-            <mpath xlink:href="#pTri"/>
-          </animateMotion>
-        </circle>
-      </svg>
-    </div>
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.1/build/three.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.160.1/examples/jsm/controls/OrbitControls.js';
 
-    <!-- SQUARE with a missing top-right corner -->
-    <div class="symbol" aria-hidden="true">
-      <svg viewBox="0 0 200 200" role="img">
-        <!-- path goes from left-bottom -> right-bottom -> right-top (stop early for the gap) -->
-        <path id="pSquare" d="M 45,155 H 155 V 55" fill="none"/>
-        <path class="shape glow" d="M 45,155 H 155 V 55" />
-        <circle class="dot" r="7">
-          <animateMotion dur="var(--rideTime)" begin="calc(var(--delay) + .1s)" repeatCount="1" fill="freeze" keySplines=".3 0 .2 1" keyTimes="0;1" calcMode="spline">
-            <mpath xlink:href="#pSquare"/>
-          </animateMotion>
-          <animateMotion dur="var(--rideTime)" begin="cLoop.begin+.1s" repeatCount="1" fill="freeze">
-            <mpath xlink:href="#pSquare"/>
-          </animateMotion>
-        </circle>
-      </svg>
-    </div>
-  </div>
+///// SCENE / RENDERER / CAMERA /////
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
 
-  <!-- Invisible timer to restart the whole sequence forever -->
-  <svg width="0" height="0" style="position:absolute">
-    <rect width="1" height="1" fill="none">
-      <!-- total cycle length = first draw start (0s) through last dot ride -->
-      <animate id="cLoop" attributeName="x" from="0" to="1"
-               dur="calc(var(--stagger)*2 + var(--rideTime) + .6s)"
-               begin="0s;cLoop.end" />
-    </rect>
-  </svg>
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xa7d8ff, 120, 520);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+camera.position.set(0, 28, 110);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minDistance = 50;
+controls.maxDistance = 220;
+controls.minPolarAngle = Math.PI * 0.15;
+controls.maxPolarAngle = Math.PI * 0.48;
+
+///// LIGHTS /////
+const hemi = new THREE.HemisphereLight(0xffffff, 0x2b6d2d, 0.9);
+scene.add(hemi);
+
+const sun = new THREE.DirectionalLight(0xfff4df, 1.1);
+sun.position.set(130, 220, 80);
+scene.add(sun);
+
+// sky sun sprite
+{
+  const sunTex = new THREE.CanvasTexture(makeRadial(256, '#fff7c2', 'rgba(255,215,106,0)'));
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTex, transparent: true, depthWrite:false }));
+  spr.scale.set(120,120,1);
+  spr.position.set(180,140,-120);
+  scene.add(spr);
+}
+
+///// GROUND /////
+{
+  const geo = new THREE.PlaneGeometry(1000, 1000, 1, 1);
+  const mat = new THREE.MeshLambertMaterial({ color: 0x7bc96f });
+  const ground = new THREE.Mesh(geo, mat);
+  ground.rotation.x = -Math.PI/2;
+  ground.position.y = -2;
+  scene.add(ground);
+}
+
+///// CLOUDS /////
+const cloudTex = new THREE.CanvasTexture(makeCloudTex(512));
+cloudTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+cloudTex.wrapS = cloudTex.wrapT = THREE.ClampToEdgeWrapping;
+
+makeCloud(-160, 120, -100, 1.2, 55);
+makeCloud(-120, 95,  -10, 1.0, 70);
+makeCloud(-200, 70,   80, 0.9, 90);
+makeCloud(-140, 140,  40, 1.3, 65);
+
+function makeCloud(x, y, z, scale=1, speed=60){
+  const g = new THREE.Group();
+  const puffs = 3 + Math.floor(Math.random()*3);
+  for(let i=0;i<puffs;i++){
+    const s = (40 + Math.random()*60) * scale;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: cloudTex, transparent: true, depthWrite:false, opacity: 0.9
+    }));
+    sprite.position.set(i*30 + Math.random()*20, Math.random()*15, Math.random()*10);
+    sprite.scale.set(s, s*0.6, 1);
+    g.add(sprite);
+  }
+  g.position.set(x,y,z);
+  g.userData.speed = (0.2 + Math.random()*0.3) * (120/speed);
+  scene.add(g);
+  clouds.push(g);
+}
+const clouds = [];
+
+///// FLOWER FIELD 🌼 /////
+/* Flowers = slim green stems (instanced cylinders) + sprite blossoms for nice color/alpha. */
+const flowers = []; // store positions for optional behavior later
+
+function makeFlowerTextures(){
+  // a few blossom palettes: daisy, pink, blue, orange
+  return [
+    new THREE.CanvasTexture(flowerSprite(256, '#fff8f0', '#ffd76a', '#ffaf2e')), // daisy
+    new THREE.CanvasTexture(flowerSprite(256, '#ffd0ea', '#ff7ab6', '#a10055')), // pink
+    new THREE.CanvasTexture(flowerSprite(256, '#cfe5ff', '#6fb3ff', '#1b5ed8')), // blue
+    new THREE.CanvasTexture(flowerSprite(256, '#ffe2bf', '#ffb84a', '#b35a00')), // orange
+  ].map(t => (t.colorSpace = THREE.SRGBColorSpace, t.anisotropy = renderer.capabilities.getMaxAnisotropy(), t));
+}
+
+function flowerSprite(size, petalLight, petalMid, center){
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+
+  // petals (8)
+  for(let i=0;i<8;i++){
+    const ang = (i/8)*Math.PI*2;
+    const px = size/2 + Math.cos(ang)*size*0.2;
+    const py = size/2 + Math.sin(ang)*size*0.2;
+    const grad = ctx.createRadialGradient(px, py, size*0.02, px, py, size*0.22);
+    grad.addColorStop(0, petalLight);
+    grad.addColorStop(0.6, petalMid);
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(px, py, size*0.18, size*0.28, ang, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // center
+  const g2 = ctx.createRadialGradient(size/2, size/2, size*0.01, size/2, size/2, size*0.12);
+  g2.addColorStop(0, '#fff7c2');
+  g2.addColorStop(1, center);
+  ctx.fillStyle = g2;
+  ctx.beginPath(); ctx.arc(size/2, size/2, size*0.12, 0, Math.PI*2); ctx.fill();
+
+  return c;
+}
+
+function spawnFlowerField(){
+  const texes = makeFlowerTextures();
+
+  // stems (instanced for performance)
+  const stemGeo = new THREE.CylinderGeometry(0.07, 0.09, 2, 6);
+  const stemMat = new THREE.MeshLambertMaterial({ color: 0x2e8b57 });
+  const count = Math.min(300, Math.floor((window.innerWidth*window.innerHeight)/9000) + 120);
+  const stems = new THREE.InstancedMesh(stemGeo, stemMat, count);
+  stems.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  scene.add(stems);
+
+  for(let i=0;i<count;i++){
+    const x = rand(-120, 120);
+    const z = rand(-90, 90);
+    const h = 1.2 + Math.random()*1.6; // stem height
+    const scale = 0.6 + Math.random()*0.8;
+    const y = -2 + h/2; // ground is y = -2
+
+    // set stem matrix
+    const m = new THREE.Matrix4()
+      .makeScale(1, h/2, 1) // cylinder default height 2 -> scale to h
+      .multiply(new THREE.Matrix4().makeRotationX(0))
+      .multiply(new THREE.Matrix4().makeTranslation(x, y, z));
+    stems.setMatrixAt(i, m);
+
+    // blossom sprite
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: texes[i % texes.length], transparent: true, depthWrite: false
+    }));
+    sprite.scale.set(2.2*scale, 2.2*scale, 1);
+    sprite.position.set(x, y + h/2 + 0.4, z);
+    scene.add(sprite);
+
+    flowers.push({ x, y: y + h/2 + 0.4, z, sprite });
+  }
+}
+spawnFlowerField();
+
+///// BUTTERFLY MODEL (procedural) /////
+function makeWingTexture(hexA, hexB, hexC){
+  const w = 256, h = 256;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+
+  const grad = ctx.createRadialGradient(w*0.65, h*0.55, 10, w*0.55, h*0.50, w*0.7);
+  grad.addColorStop(0, hexC);
+  grad.addColorStop(0.45, hexB);
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.ellipse(w*0.5, h*0.55, w*0.48, h*0.4, 0, 0, Math.PI*2); ctx.fill();
+
+  const grad2 = ctx.createRadialGradient(w*0.6, h*0.5, 8, w*0.55, h*0.5, w*0.42);
+  grad2.addColorStop(0, hexA);
+  grad2.addColorStop(0.6, 'rgba(255,255,255,0.15)');
+  grad2.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad2;
+  ctx.beginPath(); ctx.ellipse(w*0.5, h*0.54, w*0.36, h*0.3, 0, 0, Math.PI*2); ctx.fill();
+
+  const img = ctx.getImageData(0,0,w,h);
+  const d = img.data;
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const i = (y*w+x)*4;
+      const nx = (x-w*0.5)/(w*0.5), ny = (y-h*0.55)/(h*0.45);
+      const r = Math.sqrt(nx*nx + ny*ny);
+      const alpha = Math.max(0, 1 - (r-0.7)*2.5);
+      d[i+3] = Math.min(255, d[i+3] * (alpha));
+    }
+  }
+  ctx.putImageData(img,0,0);
+  return new THREE.CanvasTexture(c);
+}
+
+function makeRadial(size, inner, outer){
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(size*0.35,size*0.35,size*0.1, size*0.5,size*0.5,size*0.5);
+  g.addColorStop(0, inner);
+  g.addColorStop(1, outer);
+  ctx.fillStyle = g; ctx.fillRect(0,0,size,size);
+  return c;
+}
+
+function makeCloudTex(size){
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+  const g = ctx.createRadialGradient(size/2, size/2, size*0.1, size/2, size/2, size*0.5);
+  g.addColorStop(0, 'rgba(255,255,255,0.95)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(size/2, size/2, size*0.5, 0, Math.PI*2); ctx.fill();
+  return c;
+}
+
+function createButterfly(variant=0, scale=1){
+  const g = new THREE.Group();
+
+  // Body
+  const bodyGeo = new THREE.CapsuleGeometry(0.18*scale, 0.9*scale, 6, 10);
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x3b2f2f, roughness: 0.6, metalness: 0.0 });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.rotation.z = Math.PI/2;
+  g.add(body);
+
+  // Antennae
+  const ant = new THREE.Group();
+  const antMat = new THREE.MeshStandardMaterial({ color: 0x3b2f2f, roughness: 0.8 });
+  const antGeo = new THREE.CylinderGeometry(0.02*scale, 0.01*scale, 0.6*scale, 6);
+  const a1 = new THREE.Mesh(antGeo, antMat);
+  const a2 = new THREE.Mesh(antGeo, antMat);
+  a1.position.set(0, 0.45*scale, 0.12*scale); a1.rotation.z = 0.7;
+  a2.position.set(0, 0.45*scale, -0.12*scale); a2.rotation.z = 0.7;
+  ant.add(a1, a2);
+  g.add(ant);
+
+  // Wing materials (variants)
+  const variants = [
+    ['#ff7ab6','#ffb7d8','#ffe7f1'],
+    ['#ffb84a','#ffd27d','#fff5d6'],
+    ['#4da6ff','#9bd0ff','#ebf7ff'],
+    ['#4bd875','#9df4a7','#e9ffe9'],
+  ];
+  const [A,B,C] = variants[variant % variants.length];
+  const tex = makeWingTexture(A,B,C);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+  const wingMat = new THREE.MeshStandardMaterial({
+    map: tex, transparent: true, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.0
+  });
+
+  const wingGeo = new THREE.PlaneGeometry(1.8*scale, 1.3*scale, 8, 1);
+  for (let i=0;i<wingGeo.attributes.position.count;i++){
+    const x = wingGeo.attributes.position.getX(i);
+    wingGeo.attributes.position.setZ(i, Math.sin((x/(1.8*scale)+0.5)*Math.PI)*0.08*scale);
+  }
+  wingGeo.computeVertexNormals();
+
+  const leftPivot = new THREE.Object3D(); leftPivot.position.set(0, 0, 0.1*scale);
+  const leftWing  = new THREE.Mesh(wingGeo, wingMat); leftWing.position.set(0.9*scale, 0.15*scale, 0);
+  leftPivot.add(leftWing); g.add(leftPivot);
+
+  const rightPivot = new THREE.Object3D(); rightPivot.position.set(0, 0, -0.1*scale);
+  const rightWing  = new THREE.Mesh(wingGeo, wingMat); rightWing.scale.x = -1; rightWing.position.set(0.9*scale, 0.15*scale, 0);
+  rightPivot.add(rightWing); g.add(rightPivot);
+
+  g.userData.leftPivot = leftPivot;
+  g.userData.rightPivot = rightPivot;
+  g.userData.body = body;
+  leftPivot.rotation.y = 0.25; rightPivot.rotation.y = -0.25;
+
+  return g;
+}
+
+///// BUTTERFLY FLOCK /////
+class Butterfly {
+  constructor(index){
+    const scale = 1 + Math.random()*0.4;
+    this.mesh = createButterfly(index, scale);
+    this.mesh.position.set(rand(-80,80), rand(6,50), rand(-60,60));
+    this.velocity = new THREE.Vector3(rand(0.2,0.8), rand(-0.1,0.1), rand(-0.2,0.2));
+    this.maxSpeed = 1.1 + Math.random()*0.9;
+    this.turnSpeed = 0.06 + Math.random()*0.06;
+    this.flapSpeed = 7 + Math.random()*4; // rad/s
+    this.flapPhase = Math.random()*Math.PI*2;
+    this.wanderTheta = Math.random()*Math.PI*2;
+    this.wanderStrength = 0.07 + Math.random()*0.06;
+    this.bounds = { x: 120, yMin: 4, yMax: 70, z: 90 };
+    scene.add(this.mesh);
+
+    // optional “flower curiosity”: occasionally bias toward nearest flower
+    this.curiosityTimer = rand(2, 6);
+  }
+
+  update(dt, target){
+    // Periodically pick a local flower target for a brief moment
+    this.curiosityTimer -= dt;
+    let flowerBias = new THREE.Vector3();
+    if (this.curiosityTimer < 0 && flowers.length){
+      // find a nearby flower (cheap sample)
+      const pick = flowers[(Math.random()*flowers.length)|0];
+      const fpos = new THREE.Vector3(pick.x, pick.y + 0.8, pick.z);
+      flowerBias.subVectors(fpos, this.mesh.position).multiplyScalar(0.01);
+      // reset timer so they don't lock on too often
+      this.curiosityTimer = rand(2.5, 7.5);
+    }
+
+    // Wander
+    this.wanderTheta += (Math.random()-0.5) * 1.2 * dt;
+    const wanderDir = new THREE.Vector3(
+      Math.cos(this.wanderTheta),
+      Math.sin(this.wanderTheta*0.7)*0.5,
+      Math.sin(this.wanderTheta*1.3)
+    ).multiplyScalar(this.wanderStrength);
+
+    // Mouse attraction (small)
+    const steer = new THREE.Vector3();
+    if (target.active){
+      steer.subVectors(target.point, this.mesh.position).multiplyScalar(0.015);
+    }
+
+    // Combine
+    this.velocity.add(wanderDir).add(steer).add(flowerBias);
+
+    // Soft vertical confinement
+    if (this.mesh.position.y < this.bounds.yMin) this.velocity.y += 0.03;
+    if (this.mesh.position.y > this.bounds.yMax) this.velocity.y -= 0.03;
+
+    // Limit speed
+    const speed = this.velocity.length();
+    const max = this.maxSpeed;
+    if (speed > max) this.velocity.multiplyScalar(max / speed);
+
+    // Integrate
+    this.mesh.position.addScaledVector(this.velocity, dt * 60);
+
+    // Wrap
+    const { x, z } = this.bounds;
+    if (this.mesh.position.x >  x) this.mesh.position.x = -x;
+    if (this.mesh.position.x < -x) this.mesh.position.x =  x;
+    if (this.mesh.position.z >  z) this.mesh.position.z = -z;
+    if (this.mesh.position.z < -z) this.mesh.position.z =  z;
+
+    // Face velocity
+    if (this.velocity.lengthSq() > 0.00001){
+      const dir = this.velocity.clone().normalize();
+      const targetQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1,0,0), dir);
+      this.mesh.quaternion.slerp(targetQuat, this.turnSpeed);
+    }
+
+    // Wing flap
+    const lp = this.mesh.userData.leftPivot;
+    const rp = this.mesh.userData.rightPivot;
+    const flapAmp = THREE.MathUtils.lerp(0.5, 1.25, THREE.MathUtils.clamp(this.velocity.length() / this.maxSpeed, 0, 1));
+    this.flapPhase += this.flapSpeed * dt;
+    const a = Math.sin(this.flapPhase) * flapAmp;
+    lp.rotation.z =  0.5 + a;
+    rp.rotation.z = -0.5 - a;
+  }
+}
+
+function rand(a,b){ return a + Math.random()*(b-a); }
+
+const butterflies = [];
+const COUNT = Math.min(80, Math.floor((window.innerWidth*window.innerHeight)/18000) + 24);
+for (let i=0;i<COUNT;i++){
+  butterflies.push(new Butterfly(i));
+}
+
+///// POINTER TARGET /////
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2(-2,-2);
+const target = { active:false, point: new THREE.Vector3(0, 25, 0) };
+const targetPlane = new THREE.Plane(new THREE.Vector3(0,1,0), -25); // y = 25 plane
+
+function onPointerMove(x, y){
+  pointer.x =  (x / window.innerWidth) * 2 - 1;
+  pointer.y = -(y / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hit = new THREE.Vector3();
+  raycaster.ray.intersectPlane(targetPlane, hit);
+  target.point.copy(hit);
+  target.active = true;
+}
+
+window.addEventListener('mousemove', e => onPointerMove(e.clientX, e.clientY), {passive:true});
+window.addEventListener('touchstart', e => { if (e.touches[0]) onPointerMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+window.addEventListener('touchmove',  e => { if (e.touches[0]) onPointerMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+
+///// RESIZE /////
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+///// TICK /////
+let last = performance.now();
+function tick(now){
+  const dt = Math.min(0.033, (now - last) / 1000);
+  last = now;
+
+  for (const c of clouds){
+    c.position.x += c.userData.speed;
+    if (c.position.x > 220) c.position.x = -220 - Math.random()*40;
+  }
+
+  for (const b of butterflies) b.update(dt, target);
+
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+///// CANVAS HELPERS /////
+function makeRadial(size, inner, outer){
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(size*0.35,size*0.35,size*0.1, size*0.5,size*0.5,size*0.5);
+  g.addColorStop(0, inner);
+  g.addColorStop(1, outer);
+  ctx.fillStyle = g; ctx.fillRect(0,0,size,size);
+  return c;
+}
+
+function makeCloudTex(size){
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+  const g = ctx.createRadialGradient(size/2, size/2, size*0.1, size/2, size/2, size*0.5);
+  g.addColorStop(0, 'rgba(255,255,255,0.95)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(size/2, size/2, size*0.5, 0, Math.PI*2); ctx.fill();
+  return c;
+}
+</script>
 </body>
 </html>
